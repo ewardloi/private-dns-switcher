@@ -1,4 +1,4 @@
-package com.alexloi.privatednsswitcher
+package com.alexloi.pdnsswitcher.probe
 
 import android.net.Network
 import android.util.Log
@@ -9,6 +9,7 @@ import java.net.InetSocketAddress
 import kotlin.random.Random
 
 object DnsProbe {
+
     private const val TAG = "DnsProbe"
     private const val TIMEOUT_MS = 2000
 
@@ -41,28 +42,28 @@ object DnsProbe {
         val id = Random.nextInt(0, 0xFFFF)
         val header = byteArrayOf(
             (id shr 8).toByte(), id.toByte(),
-            0x01, 0x00, // flags: standard query, recursion desired
-            0x00, 0x01, // QDCOUNT = 1
-            0x00, 0x00, // ANCOUNT
-            0x00, 0x00, // NSCOUNT
-            0x00, 0x00  // ARCOUNT
+            0x01, 0x00,
+            0x00, 0x01,
+            0x00, 0x00,
+            0x00, 0x00,
+            0x00, 0x00
         )
         val question = ArrayList<Byte>()
         domain.split(".").forEach { label ->
             question.add(label.length.toByte())
             question.addAll(label.toByteArray(Charsets.US_ASCII).toList())
         }
-        question.add(0) // terminator
-        question.add(0x00); question.add(0x01) // QTYPE = A
-        question.add(0x00); question.add(0x01) // QCLASS = IN
+        question.add(0)
+        question.add(0x00); question.add(0x01)
+        question.add(0x00); question.add(0x01)
         return header + question.toByteArray()
     }
 
     private fun isValidDnsResponse(query: ByteArray, response: ByteArray, length: Int): Boolean {
         if (length < 12) return false
-        if (response[0] != query[0] || response[1] != query[1]) return false // ID mismatch
+        if (response[0] != query[0] || response[1] != query[1]) return false
         val flagsByte1 = response[2].toInt()
-        val isResponse = (flagsByte1 and 0x80) != 0 // QR bit set
+        val isResponse = (flagsByte1 and 0x80) != 0
         val rcode = response[3].toInt() and 0x0F
         return isResponse && rcode == 0
     }

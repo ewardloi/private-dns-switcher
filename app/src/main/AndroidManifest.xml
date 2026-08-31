@@ -5,15 +5,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!--
-        A regular app cannot write to protected settings without this
-        permission. It must be granted once via adb (see README):
-        adb shell pm grant com.alexloi.privatednsswitcher android.permission.WRITE_SECURE_SETTINGS
-    -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
@@ -33,19 +29,12 @@
         </activity>
 
         <service
-            android:name=".WifiMonitorService"
+            android:name=".NetworkMonitorService"
             android:foregroundServiceType="specialUse"
             android:exported="false">
-            <!--
-                Required justification string for the "specialUse" foreground
-                service type on Android 14+. If this app is ever published to
-                Google Play, this same string (or a similar description) must
-                also be entered in Play Console under
-                App content -> Foreground service permission declaration.
-            -->
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="network-configuration-monitor" />
+                android:value="network-configuration-monitor: watches network changes (Wi-Fi/mobile/Ethernet/VPN) to switch Android's Private DNS setting" />
         </service>
 
         <receiver

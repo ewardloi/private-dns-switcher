@@ -1,4 +1,4 @@
-package com.alexloi.privatednsswitcher
+package com.alexloi.pdnsswitcher
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,7 +9,6 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -20,15 +19,16 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class WifiMonitorService : Service() {
+class NetworkMonitorService : Service() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var connectivityManager: ConnectivityManager
     private var callback: ConnectivityManager.NetworkCallback? = null
+    private var lastTransportSignature: String? = null
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(NOTIFICATION_ID, buildNotification("Wi-Fi monitoring started"))
+        startForeground(NOTIFICATION_ID, buildNotification("Network monitoring started"))
         connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         registerCallback()
     }
@@ -44,46 +44,56 @@ class WifiMonitorService : Service() {
     }
 
     private fun registerCallback() {
-        val request = NetworkRequest.Builder()
-            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-            .build()
-
         callback = object : ConnectivityManager.NetworkCallback() {
+
             override fun onAvailable(network: Network) {
-                // Bind the probe to this specific Wi-Fi network
-                handleEvent("Wi-Fi connected", network)
+                handleEvent("Network connected", network)
             }
 
             override fun onLost(network: Network) {
-                // The network is already gone - probe over whatever network is
-                // currently active (could be mobile data, or none at all)
-                handleEvent("Wi-Fi disconnected", null)
+                lastTransportSignature = null
+                handleEvent("Network disconnected", null)
+            }
+
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                val signature = transportSignature(caps)
+                val previous = lastTransportSignature
+                lastTransportSignature = signature
+                if (previous != null && previous != signature) {
+                    handleEvent("Network type changed ($signature)", network)
+                }
             }
         }
-        connectivityManager.registerNetworkCallback(request, callback!!)
+        connectivityManager.registerDefaultNetworkCallback(callback!!)
+    }
+
+    private fun transportSignature(caps: NetworkCapabilities): String {
+        val parts = mutableListOf<String>()
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) parts += "wifi"
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) parts += "cellular"
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) parts += "ethernet"
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) parts += "vpn"
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) parts += "bluetooth"
+        return parts.sorted().joinToString("+").ifEmpty { "none" }
     }
 
     private fun handleEvent(reason: String, network: Network?) {
         scope.launch {
             val delaySeconds = Prefs.getProbeDelaySeconds(applicationContext)
-            // let the network settle before probing
             delay(delaySeconds * 1000L)
 
-            val testIp = Prefs.getTestIp(applicationContext)
+            val result = ModeEvaluator.evaluate(applicationContext, network)
             val hostname = Prefs.getHostname(applicationContext)
-            val probeDomain = Prefs.getProbeDomain(applicationContext)
 
-            val resolved = DnsProbe.probe(testIp, probeDomain, network)
-
-            val ok: Boolean
-            val statusLine: String
-            if (resolved) {
-                ok = PrivateDnsManager.setAutomatic(applicationContext)
-                statusLine = "$reason: $testIp reachable -> Private DNS = Automatic"
+            val ok = if (result.local) {
+                PrivateDnsManager.setAutomatic(applicationContext)
             } else {
-                ok = PrivateDnsManager.setHostname(applicationContext, hostname)
-                statusLine = "$reason: $testIp unreachable -> Private DNS = $hostname"
+                PrivateDnsManager.setHostname(applicationContext, hostname)
             }
+
+            val modeLabel = Prefs.getMode(applicationContext).label
+            val privateDnsState = if (result.local) "Automatic" else hostname
+            val statusLine = "$reason [$modeLabel]\n${result.detail}\nPrivate DNS = $privateDnsState"
 
             updateNotification(if (ok) statusLine else "$statusLine\n(missing WRITE_SECURE_SETTINGS permission)")
         }
@@ -102,6 +112,7 @@ class WifiMonitorService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Private DNS Switcher")
             .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setSmallIcon(android.R.drawable.ic_menu_info_details)
             .setOngoing(true)
             .build()

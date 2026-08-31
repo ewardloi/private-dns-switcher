@@ -1,4 +1,4 @@
-package com.alexloi.privatednsswitcher
+package com.alexloi.pdnsswitcher
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -8,7 +8,7 @@ import androidx.core.content.ContextCompat
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED && Prefs.isMonitorEnabled(context)) {
-            val serviceIntent = Intent(context, WifiMonitorService::class.java)
+            val serviceIntent = Intent(context, NetworkMonitorService::class.java)
             ContextCompat.startForegroundService(context, serviceIntent)
         }
     }

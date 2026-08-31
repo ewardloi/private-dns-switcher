@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.alexloi.privatednsswitcher"
+    namespace = "com.alexloi.pdnsswitcher"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.alexloi.privatednsswitcher"
+        applicationId = "com.alexloi.pdnsswitcher"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

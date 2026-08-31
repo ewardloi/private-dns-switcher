@@ -12,21 +12,131 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="IP address to probe (e.g. local DNS server)"
+            android:text="Network detection mode"
             android:textStyle="bold"
-            android:layout_marginTop="8dp" />
+            android:textSize="16sp" />
 
-        <EditText
-            android:id="@+id/ipInput"
+        <RadioGroup
+            android:id="@+id/modeRadioGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="10.10.1.1"
-            android:inputType="text" />
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/radioDnsProbe"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. DNS query to server (IP)" />
+
+            <RadioButton
+                android:id="@+id/radioSystemResolve"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. System domain resolve" />
+
+            <RadioButton
+                android:id="@+id/radioPing"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Ping IP address" />
+
+            <RadioButton
+                android:id="@+id/radioWifiSsid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. Wi-Fi network name" />
+
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/modeExplanationText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="12sp"
+            android:textStyle="italic" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33000000"
+            android:layout_marginTop="16dp" />
+
+        <LinearLayout
+            android:id="@+id/sectionIp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="IP address to test (DNS server or ping target)"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
+
+            <EditText
+                android:id="@+id/ipInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="10.10.1.1"
+                android:inputType="text" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sectionDomain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Domain name to resolve during the probe"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
+
+            <EditText
+                android:id="@+id/domainInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="google.com"
+                android:inputType="textUri" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sectionSsid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trusted Wi-Fi SSIDs (comma separated)"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
+
+            <EditText
+                android:id="@+id/ssidInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="HomeWiFi, OfficeWiFi"
+                android:inputType="text" />
+
+            <Button
+                android:id="@+id/locationPermissionButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Grant location permission (needed for SSID)"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hostname for Private DNS (used when the IP is unreachable)"
+            android:text="Hostname for Private DNS (used when the network is not local)"
             android:textStyle="bold"
             android:layout_marginTop="16dp" />
 
@@ -50,20 +160,6 @@
             android:layout_height="wrap_content"
             android:hint="2"
             android:inputType="number" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Domain name to resolve during the probe"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
-
-        <EditText
-            android:id="@+id/domainInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="google.com"
-            android:inputType="textUri" />
 
         <Button
             android:id="@+id/saveButton"
