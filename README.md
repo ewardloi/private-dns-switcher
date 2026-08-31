@@ -82,6 +82,20 @@ adb shell pm grant com.alexloi.pdnsswitcher android.permission.WRITE_SECURE_SETT
 7. Tap "Start monitoring" — a persistent notification will appear, showing
    the result of the last check.
 
+## IPv6
+
+Both the "DNS query to server (IP)" and "Ping IP address" fields accept
+either an IPv4 address or an IPv6 address (with or without surrounding
+brackets, e.g. `2001:db8::1` or `[2001:db8::1]`).
+
+- `DnsProbe` resolves whatever address family the string represents and
+  sends the raw UDP query over it directly; no extra configuration needed.
+- `PingProbe` detects an IPv6 target and tries `ping6` first, falling back
+  to `ping -6` on devices where `ping6` isn't a separate binary.
+- `SystemResolveProbe` (Mode 2) already resolves through the normal
+  Android system resolver, which is dual-stack and returns both A and
+  AAAA records when available.
+
 ## Project structure
 
 - `com.alexloi.pdnsswitcher` — UI, service, prefs, mode selection, and the

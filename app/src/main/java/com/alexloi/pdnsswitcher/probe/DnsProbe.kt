@@ -21,7 +21,7 @@ object DnsProbe {
             socket.soTimeout = TIMEOUT_MS
 
             val query = buildQuery(domain)
-            val address = InetAddress.getByName(serverIp)
+            val address = parseAddress(serverIp)
             val packet = DatagramPacket(query, query.size, InetSocketAddress(address, 53))
             socket.send(packet)
 
@@ -36,6 +36,11 @@ object DnsProbe {
         } finally {
             socket?.close()
         }
+    }
+
+    private fun parseAddress(ip: String): InetAddress {
+        val cleaned = ip.trim().removeSurrounding("[", "]")
+        return InetAddress.getByName(cleaned)
     }
 
     private fun buildQuery(domain: String): ByteArray {
