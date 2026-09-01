@@ -161,6 +161,20 @@
             android:hint="2"
             android:inputType="number" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Retries on failure before switching, per network event"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+
+        <EditText
+            android:id="@+id/retryInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="3"
+            android:inputType="number" />
+
         <Button
             android:id="@+id/saveButton"
             android:layout_width="wrap_content"

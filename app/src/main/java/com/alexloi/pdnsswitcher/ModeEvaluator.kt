@@ -12,14 +12,39 @@ data class EvalResult(val local: Boolean, val detail: String)
 
 object ModeEvaluator {
 
+    private const val RETRY_DELAY_MS = 800L
+
     suspend fun evaluate(context: Context, network: Network?): EvalResult {
-        return when (Prefs.getMode(context)) {
+        val mode = Prefs.getMode(context)
+        val retries = Prefs.getRetryCount(context).coerceAtLeast(1)
+
+        var lastOk = false
+        var lastDetail = ""
+        var attemptsUsed = 0
+
+        for (attempt in 1..retries) {
+            attemptsUsed = attempt
+            val (ok, detail) = runCheck(context, mode, network)
+            lastOk = ok
+            lastDetail = detail
+            if (ok) break
+            if (attempt < retries) delay(RETRY_DELAY_MS)
+        }
+
+        val suffix = if (retries > 1) {
+            if (lastOk) " [succeeded on attempt $attemptsUsed/$retries]" else " [failed after $retries attempts]"
+        } else ""
+        return EvalResult(lastOk, lastDetail + suffix)
+    }
+
+    private suspend fun runCheck(context: Context, mode: Mode, network: Network?): Pair<Boolean, String> {
+        return when (mode) {
 
             Mode.DNS_PROBE -> {
                 val ip = Prefs.getTestIp(context)
                 val domain = Prefs.getProbeDomain(context)
                 val ok = DnsProbe.probe(ip, domain, network)
-                EvalResult(ok, "DNS probe to $ip (domain $domain): ${if (ok) "responded" else "no response"}")
+                ok to "DNS probe to $ip (domain $domain): ${if (ok) "responded" else "no response"}"
             }
 
             Mode.SYSTEM_RESOLVE -> {
@@ -27,23 +52,20 @@ object ModeEvaluator {
                 PrivateDnsManager.setAutomatic(context)
                 delay(300)
                 val ok = SystemResolveProbe.resolves(domain, network)
-                EvalResult(ok, "System resolve of $domain: ${if (ok) "succeeded (local network)" else "failed"}")
+                ok to "System resolve of $domain: ${if (ok) "succeeded (local network)" else "failed"}"
             }
 
             Mode.PING -> {
                 val ip = Prefs.getTestIp(context)
                 val ok = PingProbe.ping(context, ip, network)
-                EvalResult(ok, "Ping $ip: ${if (ok) "reachable" else "unreachable"}")
+                ok to "Ping $ip: ${if (ok) "reachable" else "unreachable"}"
             }
 
             Mode.WIFI_SSID -> {
                 val ssid = WifiSsidChecker.currentSsid(context, network)
                 val trusted = Prefs.getSsidList(context)
                 val matched = ssid != null && trusted.any { it.equals(ssid, ignoreCase = true) }
-                EvalResult(
-                    matched,
-                    "Wi-Fi SSID '${ssid ?: "unknown"}': ${if (matched) "trusted" else "not trusted"}"
-                )
+                matched to "Wi-Fi SSID '${ssid ?: "unknown"}': ${if (matched) "trusted" else "not trusted"}"
             }
         }
     }

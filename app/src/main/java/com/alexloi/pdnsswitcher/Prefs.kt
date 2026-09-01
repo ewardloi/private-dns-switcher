@@ -11,10 +11,12 @@ object Prefs {
     private const val KEY_PROBE_DOMAIN = "probe_domain"
     private const val KEY_MODE = "mode"
     private const val KEY_SSID_LIST = "ssid_list"
+    private const val KEY_RETRY_COUNT = "retry_count"
 
     private const val DEFAULT_IP = "10.10.1.1"
     private const val DEFAULT_DELAY_SEC = 2
     private const val DEFAULT_PROBE_DOMAIN = "google.com"
+    private const val DEFAULT_RETRY_COUNT = 3
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
@@ -40,13 +42,17 @@ object Prefs {
             .map { it.trim() }
             .filter { it.isNotEmpty() }
 
+    fun getRetryCount(context: Context): Int =
+        prefs(context).getInt(KEY_RETRY_COUNT, DEFAULT_RETRY_COUNT)
+
     fun setValues(
         context: Context,
         ip: String,
         hostname: String,
         delaySeconds: Int,
         probeDomain: String,
-        ssidListRaw: String
+        ssidListRaw: String,
+        retryCount: Int
     ) {
         prefs(context).edit()
             .putString(KEY_IP, ip)
@@ -54,6 +60,7 @@ object Prefs {
             .putInt(KEY_DELAY_SEC, delaySeconds)
             .putString(KEY_PROBE_DOMAIN, probeDomain)
             .putString(KEY_SSID_LIST, ssidListRaw)
+            .putInt(KEY_RETRY_COUNT, retryCount.coerceAtLeast(1))
             .apply()
     }
 

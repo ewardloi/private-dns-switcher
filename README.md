@@ -82,6 +82,17 @@ adb shell pm grant com.alexloi.pdnsswitcher android.permission.WRITE_SECURE_SETT
 7. Tap "Start monitoring" — a persistent notification will appear, showing
    the result of the last check.
 
+## Reliability: retries
+
+Every mode is inherently flaky (a single dropped ping, a slow DNS reply
+right after a network switch, `getconnectionInfo()` returning stale data).
+`ModeEvaluator` wraps whichever mode is selected in a shared retry loop:
+on each network event it retries the check up to the configured number of
+times (800 ms apart), stopping as soon as one attempt succeeds. Only if
+every attempt fails is the network treated as "not trusted". The retry
+count is configurable in the UI ("Retries on failure...", default 3) and
+applies uniformly to all four modes.
+
 ## IPv6
 
 Both the "DNS query to server (IP)" and "Ping IP address" fields accept

@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipInput: EditText
     private lateinit var hostInput: EditText
     private lateinit var delayInput: EditText
+    private lateinit var retryInput: EditText
     private lateinit var domainInput: EditText
     private lateinit var ssidInput: EditText
     private lateinit var statusText: TextView
@@ -46,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         ipInput = findViewById(R.id.ipInput)
         hostInput = findViewById(R.id.hostInput)
         delayInput = findViewById(R.id.delayInput)
+        retryInput = findViewById(R.id.retryInput)
         domainInput = findViewById(R.id.domainInput)
         ssidInput = findViewById(R.id.ssidInput)
         statusText = findViewById(R.id.statusText)
@@ -57,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         ipInput.setText(Prefs.getTestIp(this))
         hostInput.setText(Prefs.getHostname(this))
         delayInput.setText(Prefs.getProbeDelaySeconds(this).toString())
+        retryInput.setText(Prefs.getRetryCount(this).toString())
         domainInput.setText(Prefs.getProbeDomain(this))
         ssidInput.setText(Prefs.getSsidListRaw(this))
 
@@ -163,6 +166,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveCurrentValues() {
         val delaySeconds = delayInput.text.toString().trim().toIntOrNull() ?: 2
+        val retryCount = retryInput.text.toString().trim().toIntOrNull() ?: 3
         val domain = domainInput.text.toString().trim().ifEmpty { "google.com" }
         Prefs.setValues(
             this,
@@ -170,7 +174,8 @@ class MainActivity : AppCompatActivity() {
             hostInput.text.toString().trim(),
             delaySeconds,
             domain,
-            ssidInput.text.toString().trim()
+            ssidInput.text.toString().trim(),
+            retryCount
         )
     }
 
@@ -181,6 +186,7 @@ class MainActivity : AppCompatActivity() {
         val locPerm = if (hasLocationPermission()) "granted" else "not granted"
         statusText.text = "Status: ${if (running) "running" else "stopped"}\n" +
             "Mode: ${Prefs.getMode(this).label}\n" +
+            "Retries: ${Prefs.getRetryCount(this)}\n" +
             "WRITE_SECURE_SETTINGS: $perm\n" +
             "Location (for mode 4): $locPerm"
     }
