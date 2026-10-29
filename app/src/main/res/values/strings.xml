@@ -1,3 +1,55 @@
 <resources>
     <string name="app_name">Private DNS Switcher</string>
+
+    <!-- Status card -->
+    <string name="status_running">Monitoring is running</string>
+    <string name="status_stopped">Monitoring is stopped</string>
+    <string name="status_mode">Mode: %1$s · Retries: %2$d</string>
+    <string name="chip_secure_ok">Secure settings: granted</string>
+    <string name="chip_secure_missing">Secure settings: not granted</string>
+    <string name="chip_location_ok">Location: granted</string>
+    <string name="chip_location_missing">Location: not granted</string>
+    <string name="action_start">Start monitoring</string>
+    <string name="action_stop">Stop monitoring</string>
+
+    <!-- Mode card -->
+    <string name="section_mode">Network detection mode</string>
+    <string name="mode_dns_probe">1. DNS query to server (IP)</string>
+    <string name="mode_system_resolve">2. System domain resolve</string>
+    <string name="mode_ping">3. Ping IP address</string>
+    <string name="mode_wifi_ssid">4. Wi-Fi network name</string>
+    <string name="explain_dns_probe">Sends a DNS query directly to the IP. Responds → local network, Private DNS turns off. No response → it turns on.</string>
+    <string name="explain_system_resolve">Turns Private DNS off, then tries to resolve the domain with the normal system resolver. Resolves → we are on the local network, stays off. Fails → Private DNS turns on.</string>
+    <string name="explain_ping">Pings the IP. Reachable → local network, Private DNS turns off. Unreachable → it turns on.</string>
+    <string name="explain_wifi_ssid">Compares the connected Wi-Fi network name against the trusted list. Match → Private DNS turns off. No match → it turns on.</string>
+
+    <!-- Settings card -->
+    <string name="section_settings">Settings</string>
+    <string name="label_ip">IP address to test</string>
+    <string name="helper_ip">DNS server or ping target, IPv4 or IPv6</string>
+    <string name="hint_ip">10.10.1.1 or 2001:db8::1</string>
+    <string name="label_domain">Domain to resolve</string>
+    <string name="helper_domain">Used during the probe</string>
+    <string name="hint_domain">google.com</string>
+    <string name="label_ssid">Trusted Wi-Fi SSIDs</string>
+    <string name="helper_ssid">Comma separated</string>
+    <string name="hint_ssid">HomeWiFi, OfficeWiFi</string>
+    <string name="action_grant_location">Grant location permission</string>
+    <string name="label_host">Private DNS hostname</string>
+    <string name="helper_host">Used when the network is not local</string>
+    <string name="hint_host">dns.example.com</string>
+    <string name="label_delay">Delay before probing (seconds)</string>
+    <string name="hint_delay">2</string>
+    <string name="label_retry">Retries on failure</string>
+    <string name="helper_retry">Attempts before switching, per network event</string>
+    <string name="hint_retry">3</string>
+    <string name="action_save">Save</string>
+    <string name="action_permission_instructions">Permission instructions</string>
+
+    <!-- Messages and dialogs -->
+    <string name="toast_saved">Saved</string>
+    <string name="toast_mode4_location">Mode 4 requires location permission</string>
+    <string name="dialog_permission_title">WRITE_SECURE_SETTINGS permission required</string>
+    <string name="dialog_permission_message">Android does not let regular apps modify system settings directly. Run this once on a computer with the phone connected via USB (USB debugging enabled, adb installed):\n\nadb shell pm grant %1$s android.permission.WRITE_SECURE_SETTINGS\n\nThe permission will persist until the app is uninstalled.</string>
+    <string name="dialog_got_it">Got it</string>
 </resources>

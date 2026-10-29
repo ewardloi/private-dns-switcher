@@ -107,6 +107,16 @@ brackets, e.g. `2001:db8::1` or `[2001:db8::1]`).
   Android system resolver, which is dual-stack and returns both A and
   AAAA records when available.
 
+## Design
+
+- UI is built with Material 3 (`Theme.Material3.DayNight.NoActionBar`) and
+  uses **Dynamic Color** on Android 12+ (`App.kt`). Older versions fall back to
+  the static palette in `res/values/colors.xml` and `themes.xml` (seed `#3F51B5`).
+- The launcher icon is an **adaptive icon** (`res/mipmap-anydpi/ic_launcher.xml`):
+  the launcher's own mask/shape is applied to it, and a monochrome layer
+  provides the Android 13+ themed icon. The notification uses a separate
+  single-colour vector (`ic_stat_circle`).
+
 ## Project structure
 
 - `com.alexloi.pdnsswitcher` — UI, service, prefs, mode selection, and the

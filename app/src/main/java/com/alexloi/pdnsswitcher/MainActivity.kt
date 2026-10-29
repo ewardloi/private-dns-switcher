@@ -3,18 +3,26 @@ package com.alexloi.pdnsswitcher
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,13 +38,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var retryInput: EditText
     private lateinit var domainInput: EditText
     private lateinit var ssidInput: EditText
-    private lateinit var statusText: TextView
-    private lateinit var toggleButton: Button
-    private lateinit var locationPermissionButton: Button
+
+    private lateinit var statusCard: MaterialCardView
+    private lateinit var statusTitle: TextView
+    private lateinit var statusSubtitle: TextView
+    private lateinit var chipSecureSettings: Chip
+    private lateinit var chipLocation: Chip
+    private lateinit var toggleButton: MaterialButton
+    private lateinit var locationPermissionButton: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val scrollView: View = findViewById(R.id.scrollView)
+        ViewCompat.setOnApplyWindowInsetsListener(scrollView) { v, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            v.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom)
+            insets
+        }
 
         modeRadioGroup = findViewById(R.id.modeRadioGroup)
         modeExplanationText = findViewById(R.id.modeExplanationText)
@@ -50,11 +73,16 @@ class MainActivity : AppCompatActivity() {
         retryInput = findViewById(R.id.retryInput)
         domainInput = findViewById(R.id.domainInput)
         ssidInput = findViewById(R.id.ssidInput)
-        statusText = findViewById(R.id.statusText)
+
+        statusCard = findViewById(R.id.statusCard)
+        statusTitle = findViewById(R.id.statusTitle)
+        statusSubtitle = findViewById(R.id.statusSubtitle)
+        chipSecureSettings = findViewById(R.id.chipSecureSettings)
+        chipLocation = findViewById(R.id.chipLocation)
         toggleButton = findViewById(R.id.toggleButton)
         locationPermissionButton = findViewById(R.id.locationPermissionButton)
-        val saveButton: Button = findViewById(R.id.saveButton)
-        val permissionButton: Button = findViewById(R.id.permissionButton)
+        val saveButton: MaterialButton = findViewById(R.id.saveButton)
+        val permissionButton: MaterialButton = findViewById(R.id.permissionButton)
 
         ipInput.setText(Prefs.getTestIp(this))
         hostInput.setText(Prefs.getHostname(this))
@@ -70,11 +98,12 @@ class MainActivity : AppCompatActivity() {
             val mode = radioIdToMode(checkedId)
             Prefs.setMode(this, mode)
             updateModeUi(mode)
+            updateStatus()
         }
 
         saveButton.setOnClickListener {
             saveCurrentValues()
-            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.toast_saved, Toast.LENGTH_SHORT).show()
         }
 
         permissionButton.setOnClickListener { showPermissionInstructions() }
@@ -95,11 +124,7 @@ class MainActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
                 if (Prefs.getMode(this) == Mode.WIFI_SSID && !hasLocationPermission()) {
-                    Toast.makeText(
-                        this,
-                        "Mode 4 requires location permission",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this, R.string.toast_mode4_location, Toast.LENGTH_LONG).show()
                     ActivityCompat.requestPermissions(
                         this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_LOCATION
                     )
@@ -128,6 +153,15 @@ class MainActivity : AppCompatActivity() {
         updateStatus()
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        updateStatus()
+    }
+
     private fun hasLocationPermission(): Boolean =
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
@@ -152,16 +186,14 @@ class MainActivity : AppCompatActivity() {
         sectionDomain.visibility = if (mode == Mode.DNS_PROBE || mode == Mode.SYSTEM_RESOLVE) View.VISIBLE else View.GONE
         sectionSsid.visibility = if (mode == Mode.WIFI_SSID) View.VISIBLE else View.GONE
 
-        modeExplanationText.text = when (mode) {
-            Mode.DNS_PROBE ->
-                "Sends a DNS query directly to the IP. Responds -> local network, Private DNS turns off. No response -> it turns on."
-            Mode.SYSTEM_RESOLVE ->
-                "Turns Private DNS off, then tries to resolve the domain with the normal system resolver. Resolves -> we are on the local network, stays off. Fails -> Private DNS turns on."
-            Mode.PING ->
-                "Pings the IP. Reachable -> local network, Private DNS turns off. Unreachable -> it turns on."
-            Mode.WIFI_SSID ->
-                "Compares the connected Wi-Fi network name against the trusted list. Match -> Private DNS turns off. No match -> it turns on."
-        }
+        modeExplanationText.setText(
+            when (mode) {
+                Mode.DNS_PROBE -> R.string.explain_dns_probe
+                Mode.SYSTEM_RESOLVE -> R.string.explain_system_resolve
+                Mode.PING -> R.string.explain_ping
+                Mode.WIFI_SSID -> R.string.explain_wifi_ssid
+            }
+        )
     }
 
     private fun saveCurrentValues() {
@@ -181,27 +213,64 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateStatus() {
         val running = Prefs.isMonitorEnabled(this)
-        toggleButton.text = if (running) "Stop monitoring" else "Start monitoring"
-        val perm = if (PrivateDnsManager.hasPermission(this)) "permission granted" else "permission NOT granted"
-        val locPerm = if (hasLocationPermission()) "granted" else "not granted"
-        statusText.text = "Status: ${if (running) "running" else "stopped"}\n" +
-            "Mode: ${Prefs.getMode(this).label}\n" +
-            "Retries: ${Prefs.getRetryCount(this)}\n" +
-            "WRITE_SECURE_SETTINGS: $perm\n" +
-            "Location (for mode 4): $locPerm"
+        val mode = Prefs.getMode(this)
+
+        toggleButton.setText(if (running) R.string.action_stop else R.string.action_start)
+        statusTitle.setText(if (running) R.string.status_running else R.string.status_stopped)
+        statusSubtitle.text = getString(R.string.status_mode, mode.label, Prefs.getRetryCount(this))
+
+        val containerAttr = if (running) {
+            com.google.android.material.R.attr.colorPrimaryContainer
+        } else {
+            com.google.android.material.R.attr.colorSurfaceContainerHighest
+        }
+        statusCard.setCardBackgroundColor(MaterialColors.getColor(statusCard, containerAttr))
+
+        val onTitleAttr = if (running) {
+            com.google.android.material.R.attr.colorOnPrimaryContainer
+        } else {
+            com.google.android.material.R.attr.colorOnSurface
+        }
+        val onSubtitleAttr = if (running) {
+            com.google.android.material.R.attr.colorOnPrimaryContainer
+        } else {
+            com.google.android.material.R.attr.colorOnSurfaceVariant
+        }
+        statusTitle.setTextColor(MaterialColors.getColor(statusTitle, onTitleAttr))
+        statusSubtitle.setTextColor(MaterialColors.getColor(statusSubtitle, onSubtitleAttr))
+
+        bindPermissionChip(
+            chipSecureSettings,
+            granted = PrivateDnsManager.hasPermission(this),
+            okText = R.string.chip_secure_ok,
+            missingText = R.string.chip_secure_missing
+        )
+
+        chipLocation.visibility = if (mode == Mode.WIFI_SSID) View.VISIBLE else View.GONE
+        bindPermissionChip(
+            chipLocation,
+            granted = hasLocationPermission(),
+            okText = R.string.chip_location_ok,
+            missingText = R.string.chip_location_missing
+        )
+    }
+
+    private fun bindPermissionChip(chip: Chip, granted: Boolean, okText: Int, missingText: Int) {
+        chip.setText(if (granted) okText else missingText)
+        chip.setChipIconResource(if (granted) R.drawable.ic_check_circle else R.drawable.ic_error)
+        val tintAttr = if (granted) {
+            com.google.android.material.R.attr.colorPrimary
+        } else {
+            com.google.android.material.R.attr.colorError
+        }
+        chip.chipIconTint = ColorStateList.valueOf(MaterialColors.getColor(chip, tintAttr))
     }
 
     private fun showPermissionInstructions() {
-        AlertDialog.Builder(this)
-            .setTitle("WRITE_SECURE_SETTINGS permission required")
-            .setMessage(
-                "Android does not let regular apps modify system settings " +
-                    "directly. Run this once on a computer with the phone connected " +
-                    "via USB (USB debugging enabled, adb installed):\n\n" +
-                    "adb shell pm grant $packageName android.permission.WRITE_SECURE_SETTINGS\n\n" +
-                    "The permission will persist until the app is uninstalled."
-            )
-            .setPositiveButton("Got it", null)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dialog_permission_title)
+            .setMessage(getString(R.string.dialog_permission_message, packageName))
+            .setPositiveButton(R.string.dialog_got_it, null)
             .show()
     }
 

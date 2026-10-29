@@ -113,7 +113,7 @@ class NetworkMonitorService : Service() {
             .setContentTitle("Private DNS Switcher")
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setSmallIcon(R.drawable.ic_stat_circle)
             .setOngoing(true)
             .build()
     }
